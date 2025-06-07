@@ -36,18 +36,25 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 flex flex-col items-center">
-      <h1 className="text-3xl font-bold mb-4">PDF Assistant</h1>
-      <div className="flex gap-2 mb-6">
-        <input type="file" onChange={e => setFile(e.target.files[0])} className="file:mr-2 file:py-2 file:px-4 file:rounded-md" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-100 p-8 flex flex-col items-center text-gray-900">
+      <h1 className="text-4xl font-bold mb-8">PDF Assistant</h1>
+      <div className="flex gap-2 mb-8">
+        <input
+          type="file"
+          onChange={e => setFile(e.target.files[0])}
+          className="file:mr-4 file:rounded-md file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-white file:cursor-pointer text-sm"
+        />
         <Button onClick={upload}>Upload</Button>
       </div>
-      <div className="w-full max-w-2xl space-y-4 mb-6">
+      <div className="w-full max-w-2xl space-y-4 mb-8 overflow-y-auto">
         {messages.map((m, idx) => (
-          <div key={idx} className="bg-white p-4 rounded shadow">
-            <p className="font-semibold">Q: {m.question}</p>
-            <div className="prose" dangerouslySetInnerHTML={{ __html: marked(m.answer) }} />
-            <p>
+          <div key={idx} className="bg-white rounded-xl shadow-lg p-4 space-y-2">
+            <p className="font-medium text-blue-700">Q: {m.question}</p>
+            <div
+              className="prose max-w-none"
+              dangerouslySetInnerHTML={{ __html: marked(m.answer) }}
+            />
+            <p className="text-sm text-gray-500">
               {m.sources.map((s, i) => (
                 <sup key={i} className="ml-1">
                   <a href="#" onClick={() => showSource(s)} className="text-blue-600">[{i + 1}]</a>
@@ -59,7 +66,7 @@ function App() {
       </div>
       <div className="w-full max-w-2xl flex gap-2">
         <input
-          className="flex-1 border rounded px-3 py-2"
+          className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={question}
           onChange={e => setQuestion(e.target.value)}
           placeholder="Ask a question..."
