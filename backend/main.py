@@ -5,6 +5,8 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import Chroma
 from langchain.llms import OpenAI
+from langchain.chains import ConversationalRetrievalChain
+from langchain.memory import ConversationBufferMemory
 import os
 import shutil
 from pdfminer.high_level import extract_text
@@ -30,6 +32,9 @@ vector_store = Chroma(embedding_function=embeddings, persist_directory=DB_DIR)
 
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=50)
 llm = OpenAI(temperature=0.2)
+retriever = vector_store.as_retriever(search_kwargs={"k": 4})
+qa_chain = ConversationalRetrievalChain.from_llm(llm, retriever)
+chat_histories: dict[str, list[tuple[str, str]]] = {}
 
 
 def process_pdf(doc_id: str, file_path: str, filename: str):
@@ -52,18 +57,18 @@ async def upload_pdf(background_tasks: BackgroundTasks, file: UploadFile = File(
     return {"id": file_id, "status": "processing"}
 
 @app.post("/ask")
-async def ask_question(query: str):
-    docs = vector_store.similarity_search(query, k=4)
-    if not docs:
-        return JSONResponse({"answer": "No relevant documents found", "sources": []})
-    context = "\n\n".join([d.page_content for d in docs])
-    prompt = (
-        "You are a helpful assistant. Use the following context to answer the question.\n" +
-        context +
-        f"\nQuestion: {query}\nAnswer:"
-    )
-    answer = llm(prompt)
-    sources = [d.metadata for d in docs]
-    return {"answer": answer.strip(), "sources": sources}
+async def ask_question(query: str, chat_id: str | None = None):
+    if chat_id is None or chat_id not in chat_histories:
+        chat_id = chat_id or str(uuid.uuid4())
+        chat_histories.setdefault(chat_id, [])
+    history = chat_histories[chat_id]
+    result = qa_chain({"question": query, "chat_history": history})
+    history.append((query, result["answer"]))
+    sources = [d.metadata for d in result.get("source_documents", [])]
+    return {
+        "chat_id": chat_id,
+        "answer": result["answer"].strip(),
+        "sources": sources,
+    }
 
 
