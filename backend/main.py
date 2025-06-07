@@ -1,20 +1,21 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks, Request
+from pydantic import BaseModel
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import Chroma
-from langchain.llms import OpenAI
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain_community.llms import OpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
-from langchain.callbacks import get_openai_callback
+from langchain_community.callbacks.manager import get_openai_callback
 import logging
 import time
 import os
 import shutil
 from pdfminer.high_level import extract_text
 import uuid
-from . import database
+import database
 
 UPLOAD_DIR = "uploads"
 DB_DIR = "chromadb"
@@ -55,6 +56,11 @@ qa_chain = ConversationalRetrievalChain.from_llm(llm, retriever)
 chat_histories: dict[str, list[tuple[str, str]]] = {}
 
 
+class AskRequest(BaseModel):
+    query: str
+    chat_id: str | None = None
+
+
 def process_pdf(doc_id: str, file_path: str, filename: str):
     text = extract_text(file_path)
     chunks = text_splitter.split_text(text)
@@ -78,7 +84,9 @@ async def upload_pdf(background_tasks: BackgroundTasks, file: UploadFile = File(
     return {"id": file_id, "status": "processing"}
 
 @app.post("/ask")
-async def ask_question(query: str, chat_id: str | None = None):
+async def ask_question(payload: AskRequest):
+    query = payload.query
+    chat_id = payload.chat_id
     if chat_id is None or chat_id not in chat_histories:
         chat_id = chat_id or str(uuid.uuid4())
         chat_histories.setdefault(chat_id, [])

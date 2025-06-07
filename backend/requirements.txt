@@ -7,4 +7,5 @@ Pillow
 sentence-transformers
 chromadb
 langchain
+langchain-community
 openai
