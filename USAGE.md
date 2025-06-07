@@ -17,9 +17,10 @@ git clone <repo-url>
 cd novel-summarizer
 ```
 
-2. Build and start all containers:
+2. Create the directories used for volume mounts and start all containers:
 
 ```bash
+mkdir -p uploads chromadb
 docker-compose up --build
 ```
 
