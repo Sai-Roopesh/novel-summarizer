@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks, Request
+from pydantic import BaseModel
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -55,6 +56,11 @@ qa_chain = ConversationalRetrievalChain.from_llm(llm, retriever)
 chat_histories: dict[str, list[tuple[str, str]]] = {}
 
 
+class AskRequest(BaseModel):
+    query: str
+    chat_id: str | None = None
+
+
 def process_pdf(doc_id: str, file_path: str, filename: str):
     text = extract_text(file_path)
     chunks = text_splitter.split_text(text)
@@ -78,7 +84,9 @@ async def upload_pdf(background_tasks: BackgroundTasks, file: UploadFile = File(
     return {"id": file_id, "status": "processing"}
 
 @app.post("/ask")
-async def ask_question(query: str, chat_id: str | None = None):
+async def ask_question(payload: AskRequest):
+    query = payload.query
+    chat_id = payload.chat_id
     if chat_id is None or chat_id not in chat_histories:
         chat_id = chat_id or str(uuid.uuid4())
         chat_histories.setdefault(chat_id, [])
