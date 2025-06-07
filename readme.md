@@ -137,6 +137,8 @@ Clone the repository and run:
 docker-compose up --build
 ```
 
+Make sure the Docker daemon is running (e.g. start Docker Desktop or run `colima start` on macOS) before executing the command.
+
 The backend will be available at http://localhost:8000 and the frontend at http://localhost:3000.
 
 Upload PDFs via the UI then ask questions about their content.

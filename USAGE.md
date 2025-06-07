@@ -6,6 +6,7 @@ This guide describes how to start the PDF assistant and interact with it.
 
 - Docker and docker-compose installed
 - An OpenAI API key set in the environment as `OPENAI_API_KEY`
+- Docker daemon running (start Docker Desktop or use `colima start` on macOS)
 
 ## Starting the services
 
