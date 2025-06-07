@@ -143,3 +143,6 @@ Upload PDFs via the UI then ask questions about their content.
 The server processes each PDF in a background task. Extracted text chunks are
 saved to a local SQLite database (`db.sqlite3`) before embeddings are stored in
 Chroma.
+Queries go through a conversational retrieval chain so follow-up questions can
+reference earlier answers. Pass the returned `chat_id` back to `/ask` to keep
+context across messages.
