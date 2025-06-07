@@ -6,6 +6,7 @@ This guide describes how to start the PDF assistant and interact with it.
 
 - Docker and docker-compose installed
 - An OpenAI API key set in the environment as `OPENAI_API_KEY`
+- Docker daemon running (start Docker Desktop or use `colima start` on macOS)
 
 ## Starting the services
 
@@ -16,9 +17,10 @@ git clone <repo-url>
 cd novel-summarizer
 ```
 
-2. Build and start all containers:
+2. Create the directories used for volume mounts and start all containers:
 
 ```bash
+mkdir -p uploads chromadb
 docker-compose up --build
 ```
 

@@ -131,11 +131,14 @@ Use (or adapt) this design plan as the blueprint for your project brief—ready 
 
 ## Getting Started
 
-Clone the repository and run:
+Clone the repository, ensure Docker is running, and create the directories used as volume mounts:
 
 ```bash
+mkdir -p uploads chromadb
 docker-compose up --build
 ```
+
+Make sure the Docker daemon is running (e.g. start Docker Desktop or run `colima start` on macOS) before executing the commands above.
 
 The backend will be available at http://localhost:8000 and the frontend at http://localhost:3000.
 
