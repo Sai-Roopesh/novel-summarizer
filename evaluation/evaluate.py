@@ -1,8 +1,10 @@
 import json
-import requests
+import urllib.request
+from urllib.error import HTTPError, URLError
 from statistics import mean
+from pathlib import Path
 
-DATA_FILE = "sample_questions.json"
+DATA_FILE = Path(__file__).with_name("sample_questions.json")
 
 
 def f1_score(pred: str, truth: str) -> float:
@@ -22,11 +24,17 @@ def main():
 
     f1s = []
     for item in data:
-        resp = requests.post(
-            "http://localhost:8000/ask", json={"query": item["question"]}
-        )
-        resp.raise_for_status()
-        ans = resp.json()["answer"]
+        try:
+            req = urllib.request.Request(
+                "http://localhost:8000/ask",
+                data=json.dumps({"query": item["question"]}).encode(),
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req) as resp:
+                ans = json.load(resp)["answer"]
+        except (HTTPError, URLError) as e:
+            print(f"Request failed: {e}")
+            return
         f1s.append(f1_score(ans, item["answer"]))
 
     print("F1:", mean(f1s))
