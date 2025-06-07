@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -7,6 +7,9 @@ from langchain.vectorstores import Chroma
 from langchain.llms import OpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
+from langchain.callbacks import get_openai_callback
+import logging
+import time
 import os
 import shutil
 from pdfminer.high_level import extract_text
@@ -20,12 +23,27 @@ os.makedirs(DB_DIR, exist_ok=True)
 database.init_db()
 
 app = FastAPI(title="PDF-QA RAG Agent")
+logging.basicConfig(level=logging.INFO)
+REQUEST_LIMIT = 20
+WINDOW = 60
+request_times: list[float] = []
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def rate_limit(request: Request, call_next):
+    now = time.time()
+    global request_times
+    request_times = [t for t in request_times if now - t < WINDOW]
+    if len(request_times) >= REQUEST_LIMIT:
+        return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded"})
+    request_times.append(now)
+    return await call_next(request)
 
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 vector_store = Chroma(embedding_function=embeddings, persist_directory=DB_DIR)
@@ -65,7 +83,14 @@ async def ask_question(query: str, chat_id: str | None = None):
         chat_id = chat_id or str(uuid.uuid4())
         chat_histories.setdefault(chat_id, [])
     history = chat_histories[chat_id]
-    result = qa_chain({"question": query, "chat_history": history})
+    with get_openai_callback() as cb:
+        result = qa_chain({"question": query, "chat_history": history})
+    logging.info(
+        "tokens prompt=%s completion=%s total=%s",
+        cb.prompt_tokens,
+        cb.completion_tokens,
+        cb.total_tokens,
+    )
     history.append((query, result["answer"]))
     sources = [d.metadata for d in result.get("source_documents", [])]
     return {
