@@ -1,0 +1,4 @@
+Client ---> FastAPI backend ---> Chroma DB
+          |                     |
+          v                     v
+        LLM <--- retrieved context
