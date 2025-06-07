@@ -148,3 +148,6 @@ reference earlier answers. Pass the returned `chat_id` back to `/ask` to keep
 context across messages. Answers now include a list of source chunks and the
 frontend renders them as clickable footnotes. Clicking a footnote calls the new
 `/chunk` endpoint to display the text snippet from the original PDF.
+Requests are limited to 20 per minute and the backend logs OpenAI token usage
+for each call. A simple evaluation harness lives in `evaluation/evaluate.py`
+using sample questions from `evaluation/sample_questions.json`.
