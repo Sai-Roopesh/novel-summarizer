@@ -145,4 +145,6 @@ saved to a local SQLite database (`db.sqlite3`) before embeddings are stored in
 Chroma.
 Queries go through a conversational retrieval chain so follow-up questions can
 reference earlier answers. Pass the returned `chat_id` back to `/ask` to keep
-context across messages.
+context across messages. Answers now include a list of source chunks and the
+frontend renders them as clickable footnotes. Clicking a footnote calls the new
+`/chunk` endpoint to display the text snippet from the original PDF.

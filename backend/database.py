@@ -31,3 +31,15 @@ def store_chunks(doc_id: str, filename: str, chunks: list[str]):
     conn.commit()
     conn.close()
 
+
+def get_chunk(doc_id: str, chunk_index: int) -> str | None:
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute(
+        "SELECT text FROM chunks WHERE doc_id = ? AND chunk_index = ?",
+        (doc_id, chunk_index),
+    )
+    row = c.fetchone()
+    conn.close()
+    return row[0] if row else None
+
