@@ -24,6 +24,9 @@ mkdir -p uploads chromadb
 docker-compose up --build
 ```
 
+If a `ModuleNotFoundError` for `langchain_community` appears, rebuild the
+containers to install the `langchain-community` package.
+
 The FastAPI backend will be running on [http://localhost:8000](http://localhost:8000) and the React frontend on [http://localhost:3000](http://localhost:3000).
 
 ## Using the application
