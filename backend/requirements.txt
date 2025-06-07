@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-multipart
+pdfminer.six
+pytesseract
+Pillow
+sentence-transformers
+chromadb
+langchain
+openai
