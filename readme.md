@@ -128,3 +128,15 @@
 ---
 
 Use (or adapt) this design plan as the blueprint for your project brief—ready for the Vibe coding platform or any hackathon spec. Happy building!
+
+## Getting Started
+
+Clone the repository and run:
+
+```bash
+docker-compose up --build
+```
+
+The backend will be available at http://localhost:8000 and the frontend at http://localhost:3000.
+
+Upload PDFs via the UI then ask questions about their content.
