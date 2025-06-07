@@ -41,7 +41,10 @@ def process_pdf(doc_id: str, file_path: str, filename: str):
     text = extract_text(file_path)
     chunks = text_splitter.split_text(text)
     database.store_chunks(doc_id, filename, chunks)
-    metadata = [{"source": filename, "chunk": i} for i in range(len(chunks))]
+    metadata = [
+        {"source": filename, "doc_id": doc_id, "chunk": i}
+        for i in range(len(chunks))
+    ]
     vector_store.add_texts(chunks, metadatas=metadata)
     vector_store.persist()
 
@@ -70,5 +73,13 @@ async def ask_question(query: str, chat_id: str | None = None):
         "answer": result["answer"].strip(),
         "sources": sources,
     }
+
+
+@app.get("/chunk")
+async def get_chunk(doc_id: str, chunk: int):
+    text = database.get_chunk(doc_id, chunk)
+    if text is None:
+        raise HTTPException(status_code=404, detail="Chunk not found")
+    return {"text": text}
 
 
