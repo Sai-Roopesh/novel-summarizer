@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -9,11 +9,13 @@ import os
 import shutil
 from pdfminer.high_level import extract_text
 import uuid
+from . import database
 
 UPLOAD_DIR = "uploads"
 DB_DIR = "chromadb"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(DB_DIR, exist_ok=True)
+database.init_db()
 
 app = FastAPI(title="PDF-QA RAG Agent")
 app.add_middleware(
@@ -29,20 +31,25 @@ vector_store = Chroma(embedding_function=embeddings, persist_directory=DB_DIR)
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=50)
 llm = OpenAI(temperature=0.2)
 
+
+def process_pdf(doc_id: str, file_path: str, filename: str):
+    text = extract_text(file_path)
+    chunks = text_splitter.split_text(text)
+    database.store_chunks(doc_id, filename, chunks)
+    metadata = [{"source": filename, "chunk": i} for i in range(len(chunks))]
+    vector_store.add_texts(chunks, metadatas=metadata)
+    vector_store.persist()
+
 @app.post("/upload")
-async def upload_pdf(file: UploadFile = File(...)):
+async def upload_pdf(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported")
     file_id = str(uuid.uuid4())
     file_path = os.path.join(UPLOAD_DIR, file_id + ".pdf")
     with open(file_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
-    text = extract_text(file_path)
-    chunks = text_splitter.split_text(text)
-    metadata = [{"source": file.filename, "chunk": i} for i in range(len(chunks))]
-    vector_store.add_texts(chunks, metadatas=metadata)
-    vector_store.persist()
-    return {"id": file_id, "chunks": len(chunks)}
+    background_tasks.add_task(process_pdf, file_id, file_path, file.filename)
+    return {"id": file_id, "status": "processing"}
 
 @app.post("/ask")
 async def ask_question(query: str):
@@ -58,4 +65,5 @@ async def ask_question(query: str):
     answer = llm(prompt)
     sources = [d.metadata for d in docs]
     return {"answer": answer.strip(), "sources": sources}
+
 

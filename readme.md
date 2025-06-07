@@ -140,3 +140,6 @@ docker-compose up --build
 The backend will be available at http://localhost:8000 and the frontend at http://localhost:3000.
 
 Upload PDFs via the UI then ask questions about their content.
+The server processes each PDF in a background task. Extracted text chunks are
+saved to a local SQLite database (`db.sqlite3`) before embeddings are stored in
+Chroma.
